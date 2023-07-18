@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Jim : STE4</title>
+  <!--  Simple reset to delete the margins  -->
+
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" /> 
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link href="ste4.css" type="text/css" rel="stylesheet" />
+  <script type="text/javascript" src="ste4.js"></script>
+</head>
+<body>
+  <!--  Our code  -->
+  <h1>STE4 shifts</h1>
+  <table id="shift-log">
+  <thead>
+    <th>Date</th>
+    <th>Location</th>
+    <th>...</th>
+    <th>Tags</th>
+  </thead>
+  <tbody>
+    <!-- content goes here -->
+  </tbody>
+  </table>
+
+  <dialog id="bridge_info" onclick="event.target==this && this.close()">
+    <h2 id="bridge_id">id</h2>
+    <h3 id="bridge_name">name</h3>
+    <h4 id="bridge_at">at (mileage or station)</h4>
+    <div id="bridge_details">shift times <!-- split out? --> / bridge details</div>
+    <div class="flex">
+      <div id="bridge_photo"><div id="gallery"></div><form id="drop_area" action="ste4-upload.php" method="POST"><label for="photo_input">upload</label><input id="photo_input" type="file" multiple accept="image/*" /><input type="hidden" name="sid" id="sid_input"/><input type="hidden" name="tlc" id="tlc_input"/></form></div>
+      <div id="bridge_map"><a class="osgridref" href="#">&#x1F5FA; NZ&#8239;123&#8239;735</a>
+<a class="wsg84" href="#">&#x1F310; 55.58584, -1.85859</a>
+<!-- grid icon, globe icon, routeview zoom in --></div>
+    </div>
+    <div id="bridge_tags">/tags</div>
+    <div id="bridge_docs">documents</div>
+    <button id="close_modal" class="x" aria-label="close" >&times;</button>
+  </dialog>
+</body>
+<footer>
+<svg class="icon" xmlns="http://www.w3.org/2000/svg"><use href="/inc/fb.svg#FBrail" /></svg>
+<svg class="icon" xmlns="http://www.w3.org/2000/svg"><use href="/inc/br.svg#BRarrow2" /></svg>
+</footer>
+</html>
