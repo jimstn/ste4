@@ -18,7 +18,7 @@ body { font-family:Helvetica }
 
 	td.tags li {display:inline-block; border: 1px dotted #ccc; border-radius:2px; padding: 0 2px; list-style-type: none; margin-right:2px;}
 	td.tags li:hover {background-color: rgba(220,220,220,0.2);border-style:solid;cursor:default}
-	td.tags ul {margin:0}
+	td.tags ul {margin:1em}
 
 	span.match{text-decorati:underline; text-decoration-style: dashed; border: 1px dotted #888; padding: 0 1px; border-radius: 2px}
 	.lne span.match {border-color:#f48a1e}
@@ -34,15 +34,21 @@ body { font-family:Helvetica }
 	/* dialog Styles*/
 dialog {
 	padding: 1rem 3rem;
+	padding-top: 2rem;
 	background: white;
 	max-width: 1200px;
-	min-width: 600px;
 	width:80vw;
-	padding-top: 2rem;
 	border-radius: 20px;
 	border: 0;
 	box-shadow: 0 5px 30px 0 rgb(0 0 0 / 20%);
 	animation: fadeIn 1s ease both;
+}
+
+@media (max-width: 650px) { 
+  dialog {
+    padding: 1rem;
+   /* move close X, tighten up para spacing, pictures as carousel, map on carousel? */
+  }
 }
 dialog .flex {	
   display:flex;
@@ -72,27 +78,56 @@ dialog::backdrop {
 			color: #888;
 			transform: scale(1.2);
 		}
+		&:focus {
+			color: #888;
+			outline: none;
+		}
 	}
-	dialog :is(h2, h3, h4, .flex > div) {
+	dialog :is(h2, h3, h4) {
 		padding:5px; margin:5px
 	}
-	
-	.flex > div {
-	  flex:1;
-	  min-height: 5em;
-	}	
-	dialog > div, 	dialog .flex > div {
-	  border:1px solid #eee;
-	  margin-left: 5px;
+
+	dialog > div {
+	  border:1px dashed #eef;
 	  border-radius:5px;
 	  min-height: 2em;
 	  padding:5px;
 	}
+	
+#bridge_at:empty { display: none }
 
-#bridge_photo {padding:0; overflow:hidden; text-align:center}
-#bridge_photo img { max-width:100%; max-height:40vh; border-radius:4px;}
+#bridge_photo {
+  overflow-x: scroll;
+  overflow-y: hidden;
+  white-space: nowrap;
+  padding:0;
+  -webkit-overflow-scrolling: touch;
+  &::-webkit-scrollbar {
+    xxdispla: none;
+  }
+}
+#bridge_photo figure, .card { max-width:400px; max-height:40vh; border-radius:5px;margin:10px; margin-left: 0; display: inline-block;vertical-align:top}
+#bridge_photo figure:first-child{ margin-left:10px}
 
-#bridge_map { overflow:hidden; background-color:#c0e0f0; box-shadow: inset 0 0 100px white; text-align:center}
+figure img {max-width:400px; max-height:40vh; border-radius:5px; margin:0; display: block}
+figure figcaption {font-style:italic; font-size:80%}
+
+#gallery {
+    display: inline-block; }
+
+
+/* alternative scrolling solution - check browser compat */
+.scrolling-wrapper-flexbox {
+  display: flex;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+
+  .card {
+    flex: 0 0 auto;
+  }
+}
+
+#bridge_map { overflow:hidden; background-color:#c0e0f0; box-shadow: inset 0 0 100px white; text-align:center; border-radius:5px; position:relative; min-width:400px; min-height:200px}
 
 
 #bridge_map a { 
@@ -106,7 +141,7 @@ dialog::backdrop {
 }
 
 td.tags ul { 
-	padding-left:1em; 
+	padding-left:0; 
 }
 td.popout {min-width:3em; text-align: center; background: rgb(100 0 0 / 0.05)}
 
@@ -120,6 +155,10 @@ td.popout {min-width:3em; text-align: center; background: rgb(100 0 0 / 0.05)}
 	border-bottom-left-radius: 5px;
 	border-left: 3px solid orange;
 	margin-right: 5px
+}
+
+#bridge_tags ul { 
+	padding-left: 0.5em;
 }
 
 form {

@@ -106,11 +106,20 @@ function addRow(shift){
     dg.querySelector('#bridge_id').innerText = tr.querySelector('td.location').dataset.tlc ?? tr.querySelector('td.location').dataset.original ;
     dg.querySelector('#bridge_name').innerText = tr.querySelector('td.location').dataset.name;
 
+    yds = tr.querySelector('td.location').dataset.yards;
+    miyd = yds ? Math.floor(yds/1760) + "mi "+ yds%1760 + "yds" : "";
+
+dg.querySelector('#bridge_at').innerText = miyd;
+
     dg.querySelector('#bridge_tags').innerHTML = tr.querySelector('td.tags').innerHTML;
     dg.className = tr.querySelector('td.location').dataset.territory ?? '';
 
 
-dg.querySelector('#bridge_map .osgridref').innerHTML = tr.querySelector('td.location').dataset.osgridref ?? 'N/A';
+dg.querySelector('.osgridref').innerHTML = tr.querySelector('td.location').dataset.osgridref ?? 'N/A';
+
+dg.querySelector('#shift_details').innerHTML = tr.querySelector('td.date').innerHTML;
+
+/* style="background: url('https://api.mapbox.com/styles/v1/jimstn/clk2pljhs00eu01qr62evbsl0/static/-1.612,54.9685,14,0/600x400?access_token=pk.eyJ1Ijoiamltc3RuIiwiYSI6ImNsazJwNzVqZzBmNzAzbmxzMmF2aXZqMmEifQ.LOITIaZYGNaYdmltk7Qu5w')" */
 
 dg.querySelector('#bridge_photo #gallery').innerHTML = "";
 callforimages({"sid": tr.querySelector('td.location').dataset.sid, "tlc": tr.querySelector('td.location').dataset.tlc})
@@ -119,8 +128,9 @@ dg.querySelector('form #sid_input').value = tr.querySelector('td.location').data
 
 dg.querySelector('form #tlc_input').value = tr.querySelector('td.location').dataset.tlc ?? '';
 
-    // show modal
+    // show modal and put focus on button.
     dg.showModal();
+    dg.querySelector('#close_modal').focus();
     ev.preventDefault();
   });
   tr.querySelector('td.location').innerText = shift.structure;
@@ -161,7 +171,7 @@ function callforimages(criteria){
     data.photos.forEach((photo) => {
       img = document.createElement("IMG")
       img.src = photo.src
-      document.getElementById("gallery").appendChild(img)
+      document.getElementById("gallery").appendChild(document.createElement("FIGURE")).appendChild(img)
     });
 
   });
@@ -197,8 +207,8 @@ function populateLocs(){
 			   loc.appendChild(getMapLink(bridge.lat,bridge.lon,loc.dataset.original ?? 'noname'));
 			 }
 			loc.innerHTML += "<br/><small>" + bridge.name;
-			loc.dataset.osgridref = bridge.osgridref;
-			loc.dataset.yards = bridge.yards;
+			if(bridge.osgridref) loc.dataset.osgridref = bridge.osgridref;
+			if(bridge.yards) loc.dataset.yards = bridge.yards;
 			loc.dataset.territory = "lne";
 			loc.dataset.sid = bridge.elr+"-"+bridge.bridge_id.replace(/[^A-Za-z0-9\-]/, "-");
 			loc.dataset.name = bridge.name; // could serialise the whole bridge object here?
@@ -212,8 +222,8 @@ function populateLocs(){
 			   loc.appendChild(getMapLink(bridge.lat,bridge.lon,loc.dataset.original ?? 'noname'));
 			 }
 			loc.innerHTML += "<br/><small>" + bridge.name;
-			loc.dataset.osgridref = bridge.osgridref;
-			loc.dataset.yards = bridge.yards;
+			if(bridge.osgridref) loc.dataset.osgridref = bridge.osgridref;
+			if(bridge.yards) loc.dataset.yards = bridge.yards;
 			loc.dataset.territory = "lnw";
 			loc.dataset.sid = bridge.elr+"-"+bridge.bridge_id.replace(/[^A-Za-z0-9\-]/, "-");
 			loc.dataset.name = bridge.name; // could serialise the whole bridge object here?
@@ -228,8 +238,8 @@ function populateLocs(){
 			   loc.appendChild(getMapLink(bridge.lat,bridge.lon,loc.dataset.original ?? 'noname'));
 			 }
 			loc.innerHTML += "<br/><small>" + bridge.name;
-			loc.dataset.osgridref = bridge.osgridref;
-			loc.dataset.yards = bridge.yards;
+			if(bridge.osgridref) loc.dataset.osgridref = bridge.osgridref;
+			if(bridge.yards) loc.dataset.yards = bridge.yards;
 			loc.dataset.territory = "sco";
 			loc.dataset.sid = bridge.elr+"-"+bridge.bridge_id.replace(/[^A-Za-z0-9\-]/, "-");
 			loc.dataset.name = bridge.name; // could serialise the whole bridge object here?
@@ -319,8 +329,12 @@ function handleDrop(e) {
 }
 function handleFiles(files) {
   files = [...files]
-  files.forEach(uploadFile)
   files.forEach(previewFile)
+    if(!document.querySelector('form#drop_area').classList.contains('bulk')){
+    files.forEach(uploadFile)
+  }
+  else alert("no") //console.log(files)
+    
 }
 function uploadFile(file) {
   let url = 'ste4-upload.php'

@@ -34,14 +34,18 @@
     <div id="shift_details">shift times</div>
     <div id="bridge_details">bridge details</div>
 
-    <div class="flex">
-      <div id="bridge_photo"><div id="gallery"></div><form id="drop_area" action="ste4-upload.php" method="POST"><label for="photo_input">upload</label><input id="photo_input" type="file" multiple accept="image/*" /><input type="hidden" name="sid" id="sid_input"/><input type="hidden" name="tlc" id="tlc_input"/></form></div>
-      <div id="bridge_map"><a class="osgridref" href="#">&#x1F5FA; NZ&#8239;123&#8239;735</a>
-<a class="wsg84" href="#">&#x1F310; 55.58584, -1.85859</a>
-<!-- try to dynamically replace with mapbox or something --></div>
+    <div id="bridge_photo">
+      <figure>
+        <div id="bridge_map"><!-- try to dynamically replace with mapbox or something --></div>
+        <figcaption>
+          <a class="osgridref" href="#">&#x1F5FA; NZ&#8239;123&#8239;735</a>
+          <a class="wsg84" href="#">&#x1F310; 55.58584, -1.85859</a>
+        </figcaption>
+      </figure>
+      <div id="gallery"></div>
+      <form id="drop_area" class="card" action="ste4-upload.php" method="POST"><label for="photo_input">upload</label><input id="photo_input" type="file" multiple accept="image/*" /><input type="hidden" name="sid" id="sid_input"/><input type="hidden" name="tlc" id="tlc_input"/></form>
     </div>
     <div id="bridge_tags">/tags</div>
-    <div id="bridge_docs">documents</div>
     <button id="close_modal" class="x" aria-label="close" >&times;</button>
   </dialog>
 
