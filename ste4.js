@@ -114,15 +114,33 @@ dg.querySelector('#bridge_at').innerText = miyd;
     dg.querySelector('#bridge_tags').innerHTML = tr.querySelector('td.tags').innerHTML;
     dg.className = tr.querySelector('td.location').dataset.territory ?? '';
 
-
-dg.querySelector('.osgridref').innerHTML = tr.querySelector('td.location').dataset.osgridref ?? 'N/A';
-
 dg.querySelector('#shift_details').innerHTML = tr.querySelector('td.date').innerHTML;
 
-/* style="background: url('https://api.mapbox.com/styles/v1/jimstn/clk2pljhs00eu01qr62evbsl0/static/-1.612,54.9685,14,0/600x400?access_token=pk.eyJ1Ijoiamltc3RuIiwiYSI6ImNsazJwNzVqZzBmNzAzbmxzMmF2aXZqMmEifQ.LOITIaZYGNaYdmltk7Qu5w')" */
+if(tr.querySelector('td.location').dataset.lonlat){
+const APIKEY = "---";
+const MAPSTYLE = "v1/jimstn/clk2pljhs00eu01qr62evbsl0";
+const MAPSIZE = "400x300";
+const MAPZOOM = 14; // vary if you vary mapsize, and want to show the same area
+const MAPLOC = tr.querySelector('td.location').dataset.lonlat + "," + MAPZOOM + ",0";
+const MAPURL = "https://api.mapbox.com/styles/" + MAPSTYLE + "/static/" + MAPLOC + "/" + MAPSIZE + "?access_token=" + APIKEY;
+
+dg.querySelector('#bridge_map').style.backgroundImage = "url(" + MAPURL + ")";
+dg.querySelector('#bridge_map').innerHTML = "";
+
+}
+else {
+  dg.querySelector('#bridge_map').style.backgroundImage = "none";
+  dg.querySelector('#bridge_map').innerHTML = "Map location not known";
+}
+
+dg.querySelector('.osgridref').innerHTML = tr.querySelector('td.location').dataset.osgridref ?? 'N/A';
+dg.querySelector('.wsg84').innerHTML = tr.querySelector('td.location').dataset.lonlat ?? 'N/A';
+
 
 dg.querySelector('#bridge_photo #gallery').innerHTML = "";
-callforimages({"sid": tr.querySelector('td.location').dataset.sid, "tlc": tr.querySelector('td.location').dataset.tlc})
+
+// make async call to get list of images and then add them to container
+callforimages({"sid": tr.querySelector('td.location').dataset.sid, "tlc": tr.querySelector('td.location').dataset.tlc});
 
 dg.querySelector('form #sid_input').value = tr.querySelector('td.location').dataset.sid ?? '';
 
@@ -205,6 +223,7 @@ function populateLocs(){
           loc.classList.add('lne');
 			 if(bridge.lat && bridge.lon){
 			   loc.appendChild(getMapLink(bridge.lat,bridge.lon,loc.dataset.original ?? 'noname'));
+			 loc.dataset.lonlat = bridge.lon+","+bridge.lat;
 			 }
 			loc.innerHTML += "<br/><small>" + bridge.name;
 			if(bridge.osgridref) loc.dataset.osgridref = bridge.osgridref;
