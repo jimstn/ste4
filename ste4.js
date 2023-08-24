@@ -10,19 +10,57 @@ document.addEventListener('DOMContentLoaded', (event) => {
 
     //shifts.all(prepare);
     shifts.forEach((shift) => {
+      // normalise date
       dt = new Date(shift.date);
       if(dt instanceof Date && !isNaN(dt)){
         shift.datetime = dt;
       }
-      if(shift.date > 40000 && shift.date < 55000){
+		// cope with Excel serial date number (days since 1900?)
+      if(shift.date > 40000 && shift.date < 55000){ 
         shift.datetime = new Date(Date.UTC(0, 0, shift.date - 1));
       }
+
+      // normalise structure ID
+      const bridge_regex = /^([A-Z]{3}[1-9]?)\W+(\w[\w\/]*)\b/i
+      const found = shift.structure.match(bridge_regex);
+      shift.structure_normalised = (found && found[1] && found[2]) ? found[1]+"-"+found[2].replace(/[^A-Za-z0-9\-]/, "-") : shift.structure;
+	
     });
 
     //shifts.sort();
     shifts.sort((a,b) => {
-      return (a.datetime ?? 0) - (b.datetime ?? 0);
+      const datcmp = (a.datetime ?? 0) - (b.datetime ?? 0);
+      const strcmp = a.structure_normalised.localeCompare(b.structure_normalised)
+      return datcmp!=0 ? datcmp : strcmp;
     });
+
+	//shifts.filter();
+	// compare adjacent shifts to see if they are the same shift
+	for(i=1;i<shifts.length;i++){
+	  // not sure why can't compare datetime directly, but it doesnt work... must conver tto ISO
+	  const datematch = shifts[i].datetime && shifts[i-1].datetime ?( shifts[i].datetime.toISOString() == shifts[i-1].datetime.toISOString() ) : false;
+	  const sidmatch = shifts[i].structure_normalised && shifts[i-1].structure_normalised ?( shifts[i].structure_normalised == shifts[i-1].structure_normalised ) : false;
+	   
+	  if(
+	    datematch && sidmatch
+	    /*  shifts[i].datetime == shifts[i-1].datetime && 
+	    shifts[i].structure_normalised == shifts[i-1].structure_normalised */
+	  ){
+	    // shifts are same time, same place, so merge them
+				
+		 // merge tags
+		 shifts[i-1].tags += ","+shifts[i].tags
+		 shifts[i].tags = "DUPLICATE";
+		 console.log("DUPLICATE: "+shifts[i].structure_normalised);
+				
+		 // make one null, to be filtered out later
+	
+	
+	  }
+	}
+	
+	  //shifts = array_filter(shifts);
+	
 
 
 
@@ -77,7 +115,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
     ev.preventDefault();
   });
 
-  filedropsetup();
+  fileDropSetup();
   
 
 });
@@ -85,66 +123,71 @@ document.addEventListener('DOMContentLoaded', (event) => {
 function addRow(shift){
   tr = document.createElement('tr');
   tr.innerHTML = '<td class="date"></td><td class="location"></td><td class="popout"><img src="inc/popout.jpeg" width="16px" height="16px" style="opacity:0.5"/></td><td class="tags"><ul></ul></td>';
-  shift_time = document.createElement('time');
 
+  shift_time = document.createElement('time');
   if(shift.datetime){
-    shift_time.datetime = shift.datetime.toISOString().substring(0, 10);
+    shift_time.setAttribute("datetime", shift.datetime.toISOString().substring(0, 10));
     shift_time.innerText = shift.datetime.toDateString();
   }
   else
     shift_time.innerText = shift.date;
 
   tr.querySelector('td.date').appendChild(shift_time);
+  if(shift.nights)tr.querySelector('td.date').append(" "+shift.nights+" night");
+  if(shift.days)tr.querySelector('td.date').append(" "+shift.days+" day");
   tr.querySelector('td.location').innerText = shift.structure;
   
   tr.querySelector('td.popout img').addEventListener("click", ev => {
     // make objects
     dg = document.getElementById("bridge_info");
     tr = ev.target.closest('tr');
+    locdata = tr.querySelector('td.location').dataset;
 
     // update modal
-    dg.querySelector('#bridge_id').innerText = tr.querySelector('td.location').dataset.tlc ?? tr.querySelector('td.location').dataset.original ;
-    dg.querySelector('#bridge_name').innerText = tr.querySelector('td.location').dataset.name;
+    dg.querySelector('#bridge_id').innerText = locdata.tlc ?? locdata.original ;
+    dg.querySelector('#bridge_name').innerText = locdata.name;
 
-    yds = tr.querySelector('td.location').dataset.yards;
+    yds = locdata.yards;
     miyd = yds ? Math.floor(yds/1760) + "mi "+ yds%1760 + "yds" : "";
 
-dg.querySelector('#bridge_at').innerText = miyd;
+    dg.querySelector('#bridge_at').innerText = miyd;
 
     dg.querySelector('#bridge_tags').innerHTML = tr.querySelector('td.tags').innerHTML;
-    dg.className = tr.querySelector('td.location').dataset.territory ?? '';
+    dg.className = locdata.territory ?? '';
 
-dg.querySelector('#shift_details').innerHTML = tr.querySelector('td.date').innerHTML;
+    dg.querySelector('#shift_details').innerHTML = tr.querySelector('td.date').innerHTML;
 
-if(tr.querySelector('td.location').dataset.lonlat){
-const APIKEY = "---";
+    if(locdata.lon && locdata.lat){
+const APIKEY = "pk.eyJ1Ijoiamltc3RuIiwiYSI6ImNsazJwNzVqZzBmNzAzbmxzMmF2aXZqMmEifQ.LOITIaZYGNaYdmltk7Qu5w";
 const MAPSTYLE = "v1/jimstn/clk2pljhs00eu01qr62evbsl0";
 const MAPSIZE = "400x300";
-const MAPZOOM = 14; // vary if you vary mapsize, and want to show the same area
-const MAPLOC = tr.querySelector('td.location').dataset.lonlat + "," + MAPZOOM + ",0";
-const MAPURL = "https://api.mapbox.com/styles/" + MAPSTYLE + "/static/" + MAPLOC + "/" + MAPSIZE + "?access_token=" + APIKEY;
+const LONLAT = locdata.lon + "," + locdata.lat;
+const MAPZOOM = 14; // vary if you vary mapsize, and want to show the same area 
+const MAPPIN = ("pin-s+0ae("+LONLAT+")");
+const MAPLOC = LONLAT + "," + MAPZOOM + ",0";
+const MAPURL = "https://api.mapbox.com/styles/" + MAPSTYLE + "/static/" + MAPPIN + "/" + MAPLOC + "/" + MAPSIZE + "?access_token=" + APIKEY;
 
-dg.querySelector('#bridge_map').style.backgroundImage = "url(" + MAPURL + ")";
+dg.querySelector('#bridge_map').style.backgroundImage = "url('" + (MAPURL) + "')";
+console.log(MAPURL)
 dg.querySelector('#bridge_map').innerHTML = "";
 
-}
-else {
-  dg.querySelector('#bridge_map').style.backgroundImage = "none";
-  dg.querySelector('#bridge_map').innerHTML = "Map location not known";
-}
+    }
+    else {
+      dg.querySelector('#bridge_map').style.backgroundImage = "none";
+      dg.querySelector('#bridge_map').innerHTML = "Map location not known";
+    }
 
-dg.querySelector('.osgridref').innerHTML = tr.querySelector('td.location').dataset.osgridref ?? 'N/A';
-dg.querySelector('.wsg84').innerHTML = tr.querySelector('td.location').dataset.lonlat ?? 'N/A';
+    dg.querySelector('.osgridref').innerHTML = locdata.osgridref ?? 'N/A';
+    dg.querySelector('.wsg84').innerHTML = locdata.lat ? locdata.lat+","+locdata.lon : 'N/A';
 
-
-dg.querySelector('#bridge_photo #gallery').innerHTML = "";
+    dg.querySelector('#bridge_photo #gallery').innerHTML = "";
 
 // make async call to get list of images and then add them to container
-callforimages({"sid": tr.querySelector('td.location').dataset.sid, "tlc": tr.querySelector('td.location').dataset.tlc});
+callforimages({"sid": locdata.sid, "tlc": locdata.tlc});
 
-dg.querySelector('form #sid_input').value = tr.querySelector('td.location').dataset.sid ?? '';
+    dg.querySelector('form #sid_input').value = locdata.sid ?? '';
 
-dg.querySelector('form #tlc_input').value = tr.querySelector('td.location').dataset.tlc ?? '';
+    dg.querySelector('form #tlc_input').value = locdata.tlc ?? '';
 
     // show modal and put focus on button.
     dg.showModal();
@@ -153,12 +196,12 @@ dg.querySelector('form #tlc_input').value = tr.querySelector('td.location').data
   });
   tr.querySelector('td.location').innerText = shift.structure;
 
-tr.querySelector('td.location').dataset.original = shift.structure;
-  if(shift.station) tr.querySelector('td.location').dataset.station = shift.station;
+  tr.querySelector('td.location').dataset.original = shift.structure;
+  if(shift.station) tr.querySelector('td.location').dataset.station = shift.station; /* TODO: WHYYYY? */
 
   
    // unless is an array
-	if(shift.tags){
+  if(shift.tags){
 	tags = shift.tags.split(',');
 	tags.forEach((t) => {
 	  tt = document.createElement('li');
@@ -166,7 +209,7 @@ tr.querySelector('td.location').dataset.original = shift.structure;
 	  tt.className = 'tag';
 	  if(t) tr.querySelector('td.tags ul').appendChild(tt);
 	});
-	}
+  }
 
   tb = document.querySelector('table tbody');
   tb.appendChild(tr);
@@ -223,7 +266,8 @@ function populateLocs(){
           loc.classList.add('lne');
 			 if(bridge.lat && bridge.lon){
 			   loc.appendChild(getMapLink(bridge.lat,bridge.lon,loc.dataset.original ?? 'noname'));
-			 loc.dataset.lonlat = bridge.lon+","+bridge.lat;
+			   loc.dataset.lon = bridge.lon;
+			   loc.dataset.lat = bridge.lat;
 			 }
 			loc.innerHTML += "<br/><small>" + bridge.name;
 			if(bridge.osgridref) loc.dataset.osgridref = bridge.osgridref;
@@ -307,7 +351,7 @@ function getMapLink(lat, lon, text){
 
 
 
-function filedropsetup(){
+function fileDropSetup(){
 
 // file upload handling
 let dropArea = document.getElementById('drop_area');
