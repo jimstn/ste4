@@ -3,6 +3,9 @@ shifts = null;
 bridges = null;
 poi = null; // other Points Of Interest
 
+const bridge_regex = /^([A-Z]{3}[1-9]?)(?:\W+(\d+(?:\ ?[AT]?[A-Z])?)|(\d+\.\d+)|([0-9]*))*\b/i 
+const elr_regex = /^([A-Z]{3}[1-9]?)\b/i
+
 
 document.addEventListener('DOMContentLoaded', (event) => {
   fetch('db/ste4.json').then((response) => response.json()).then((data) => {
@@ -10,18 +13,18 @@ document.addEventListener('DOMContentLoaded', (event) => {
 
     //shifts.all(prepare);
     shifts.forEach((shift) => {
+
       // normalise date
       dt = new Date(shift.date);
       if(dt instanceof Date && !isNaN(dt)){
-        shift.datetime = dt;
+        shift.dateobj = dt;
       }
 		// cope with Excel serial date number (days since 1900?)
       if(shift.date > 40000 && shift.date < 55000){ 
-        shift.datetime = new Date(Date.UTC(0, 0, shift.date - 1));
+        shift.dateobj = new Date(Date.UTC(0, 0, shift.date - 1));
       }
 
       // normalise structure ID
-      const bridge_regex = /^([A-Z]{3}[1-9]?)\W+(\w[\w\/]*)\b/i
       const found = shift.structure.match(bridge_regex);
       shift.structure_normalised = (found && found[1] && found[2]) ? found[1]+"-"+found[2].replace(/[^A-Za-z0-9\-]/, "-") : shift.structure;
 	
@@ -29,7 +32,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
 
     //shifts.sort();
     shifts.sort((a,b) => {
-      const datcmp = (a.datetime ?? 0) - (b.datetime ?? 0);
+      const datcmp = (a.dateobj ?? 0) - (b.dateobj ?? 0);
       const strcmp = a.structure_normalised.localeCompare(b.structure_normalised)
       return datcmp!=0 ? datcmp : strcmp;
     });
@@ -37,19 +40,16 @@ document.addEventListener('DOMContentLoaded', (event) => {
 	//shifts.filter();
 	// compare adjacent shifts to see if they are the same shift
 	for(i=1;i<shifts.length;i++){
-	  // not sure why can't compare datetime directly, but it doesnt work... must conver tto ISO
-	  const datematch = shifts[i].datetime && shifts[i-1].datetime ?( shifts[i].datetime.toISOString() == shifts[i-1].datetime.toISOString() ) : false;
+	  // not sure why can't compare dateobj directly, but it doesnt work... must convert to ISO
+	  const datematch = shifts[i].dateobj && shifts[i-1].dateobj ?( shifts[i].dateobj.toISOString() == shifts[i-1].dateobj.toISOString() ) : false;
 	  const sidmatch = shifts[i].structure_normalised && shifts[i-1].structure_normalised ?( shifts[i].structure_normalised == shifts[i-1].structure_normalised ) : false;
 	   
-	  if(
-	    datematch && sidmatch
-	    /*  shifts[i].datetime == shifts[i-1].datetime && 
-	    shifts[i].structure_normalised == shifts[i-1].structure_normalised */
-	  ){
+	  if( datematch && sidmatch ){
 	    // shifts are same time, same place, so merge them
 				
 		 // merge tags
 		 shifts[i-1].tags += ","+shifts[i].tags
+		 // meege nights / days
 		 shifts[i].tags = "DUPLICATE";
 		 console.log("DUPLICATE: "+shifts[i].structure_normalised);
 				
@@ -124,20 +124,64 @@ function addRow(shift){
   tr = document.createElement('tr');
   tr.innerHTML = '<td class="date"></td><td class="location"></td><td class="popout"><img src="inc/popout.jpeg" width="16px" height="16px" style="opacity:0.5"/></td><td class="tags"><ul></ul></td>';
 
-  shift_time = document.createElement('time');
-  if(shift.datetime){
-    shift_time.setAttribute("datetime", shift.datetime.toISOString().substring(0, 10));
-    shift_time.innerText = shift.datetime.toDateString();
+  var shift_time = document.createElement('time');
+  var tagtext = null;
+  if(shift.dateobj){
+    shift_time.setAttribute("datetime", shift.dateobj.toISOString().substring(0, 10));
+    shift_time.innerText = new Intl.DateTimeFormat("en-GB", {dateStyle:"long"}).format(shift.dateobj);
+
+    //weekdays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+    // if its on Saturday and not explicitly labelled as a day, assume its a night shift
+    if(shift.dateobj.getDay() == 6 && !shift.days) shift.nights = 1;
+
+    // //midweek
+    if(shift.nights){
+        if(shift.nights == 1)
+          tagtext = new Intl.DateTimeFormat("en-GB", {weekday:"long"}).format(shift.dateobj)+" night";
+        else if(shift.dateobj.getDay() + shift.nights < 6)
+          tagtext = shift.nights + " midweek nights";
+        else
+          tagtext = shift.nights + " nights";
+    }
+    else {
+        if(!shift.days || shift.days == 1)
+          tagtext = new Intl.DateTimeFormat("en-GB", {weekday:"long"}).format(shift.dateobj);
+        else if(shift.dateobj.getDay() + shift.days <= 6)
+          tagtext = shift.days + " midweek days";
+        else
+          tagtext = shift.days + " days";
+    }
+    if(tagtext) shift_time.setAttribute("shiftdays", tagtext);
   }
-  else
+  else {
     shift_time.innerText = shift.date;
+    tagtext = shift.nights ? "nights" : "day";
+  }
 
   tr.querySelector('td.date').appendChild(shift_time);
-  if(shift.nights)tr.querySelector('td.date').append(" "+shift.nights+" night");
-  if(shift.days)tr.querySelector('td.date').append(" "+shift.days+" day");
+  if(shift.nights){
+    n = document.createElement('SPAN');
+    n.className = 'nights tag';
+    n.innerText = tagtext
+    tr.querySelector('td.date').appendChild(n);
+  }
+  /*  if(shift.days){
+    n = document.createElement('SPAN');
+    n.className = 'days tag';
+    n.innerText = shift.days>1 ? shift.days+" days" : "Day";
+    tr.querySelector('td.date').appendChild(n);
+  } */
   tr.querySelector('td.location').innerText = shift.structure;
   
   tr.querySelector('td.popout img').addEventListener("click", ev => {
+
+
+    // FUNCTION FOR DIALOG
+    // ####
+
+
+
     // make objects
     dg = document.getElementById("bridge_info");
     tr = ev.target.closest('tr');
@@ -155,7 +199,8 @@ function addRow(shift){
     dg.querySelector('#bridge_tags').innerHTML = tr.querySelector('td.tags').innerHTML;
     dg.className = locdata.territory ?? '';
 
-    dg.querySelector('#shift_details').innerHTML = tr.querySelector('td.date').innerHTML;
+    dat = tr.querySelector('td.date time');
+    dg.querySelector('#shift_details').innerHTML = dat.innerText + " - " + dat.getAttribute("shiftdays");
 
     if(locdata.lon && locdata.lat){
 const APIKEY = "pk.eyJ1Ijoiamltc3RuIiwiYSI6ImNsazJwNzVqZzBmNzAzbmxzMmF2aXZqMmEifQ.LOITIaZYGNaYdmltk7Qu5w";
@@ -247,8 +292,6 @@ function callforimages(criteria){
 function populateLocs(){
   
   rows = document.querySelectorAll('table td.location:not(.lne):not(.lnw):not(.sco)');
-  bridge_regex = /^([A-Z]{3}[1-9]?)\W+(\w[\w\/]*)\b/i
-  elr_regex = /^([A-Z]{3}[1-9]?)\b/i
 
   rows.forEach((loc)=> {
     if(loc.dataset.original.match(bridge_regex)){

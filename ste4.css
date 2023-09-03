@@ -16,9 +16,11 @@ body { font-family:Helvetica }
     small.station {border:solid 0.5px rgba(0,0,0,1); font-weight: bold; padding:4px 8px; background-color:white; color:#001}
     small.station .tlc { padding:0 2px; font-weight: bold; color:white;background-color: rgb(242,72,12)}
 
-	td.tags li {display:inline-block; border: 1px dotted #ccc; border-radius:2px; padding: 0 2px; list-style-type: none; margin-right:2px;}
+	td.tags li, td.date span.tag {display:inline-block; border: 1px dotted #ccc; border-radius:2px; padding: 0 2px; list-style-type: none; margin-right:2px;}
 	td.tags li:hover {background-color: rgba(220,220,220,0.2);border-style:solid;cursor:default}
 	td.tags ul {margin:1em}
+	.tag.nights {background:#668; color: #ddc}
+	td.date .tag {margin-left:0.3em}
 
 	span.match{text-decorati:underline; text-decoration-style: dashed; border: 1px dotted #888; padding: 0 1px; border-radius: 2px}
 	.lne span.match {border-color:#f48a1e}
@@ -48,7 +50,7 @@ dialog {
   dialog {
     padding: 1rem;
    /* move close X, tighten up para spacing, pictures as carousel, map on carousel? */
-  }
+  } 
 }
 dialog .flex {	
   display:flex;
@@ -146,17 +148,21 @@ td.tags ul {
 }
 td.popout {min-width:3em; text-align: center; background: rgb(100 0 0 / 0.05)}
 
-#bridge_tags li.tag { 
+#bridge_tags li.tag, #shift_details .tag{ 
 	display:inline-block; 
 	padding: 3px 5px; 
 	border: 0.5px solid #ccc; 
 	background-color:#eee; 
 	color:#444; 
+	border-radius:2px;
 	border-top-left-radius: 5px;
 	border-bottom-left-radius: 5px;
 	border-left: 3px solid orange;
 	margin-right: 5px
 }
+#shift_details .tag {margin-left:0.5em;}
+#shift_details .tag.nights {background:#668;color:#dda; border-left-color:#dd8}
+#shift_details .tag.days {background:#eef;color:#668; border-left-color:#66a}
 
 #bridge_tags ul { 
 	padding-left: 0.5em;
